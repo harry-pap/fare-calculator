@@ -3,10 +3,9 @@ package parser
 import (
 	"harry-pap/beat_assignment/calculator"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
-
-	"github.com/spf13/afero"
 )
 
 func TestParseInputCSV(t *testing.T) {
@@ -82,19 +81,12 @@ func TestParseInputCSV(t *testing.T) {
 		},
 	}
 
-	appFS := afero.NewMemMapFs()
-	fileName := "/beat/rates_output.csv"
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			file, _ := appFS.Create(fileName)
+			input := strings.NewReader(tt.args.csvData)
 
-			file.WriteString(tt.args.csvData)
-			file.Close()
-			file, _ = appFS.Open(fileName)
-
-			ParseInputCSV(&file, tt.args.channel)
+			ParseInputCSV(input, tt.args.channel)
 
 			got := make([][]calculator.RidePart, 0, 10)
 
@@ -114,10 +106,6 @@ func TestParseInputCSV(t *testing.T) {
 			case <-tt.args.channel:
 				t.Errorf("ParseInputCSV pushed more messages to the work channel than expected")
 			}
-
-			file.Close()
-
-			appFS.Remove(fileName)
 		})
 	}
 }

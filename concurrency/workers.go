@@ -3,9 +3,9 @@ package concurrency
 import (
 	"encoding/csv"
 	"fmt"
-	"github.com/spf13/afero"
 	"harry-pap/beat_assignment/calculator"
 	"harry-pap/beat_assignment/model"
+	"io"
 	"log"
 	"sync"
 )
@@ -48,19 +48,19 @@ func RunWorker(workerInput WorkerInput) {
 
 // ResultWriter reads the RideFareEstimation channel, and writing each estimate into a *afero.File
 // Upon completion sync.WaitGroup.Done() is invoked
-func ResultWriter(file *afero.File, inputs chan model.RideFareEstimation, wg *sync.WaitGroup) {
+func ResultWriter(writer io.Writer, inputs chan model.RideFareEstimation, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	writer := csv.NewWriter(*file)
+	csvWriter := csv.NewWriter(writer)
 
 	for input := range inputs {
-		err := writer.Write(input.ToStringSlice())
+		err := csvWriter.Write(input.ToStringSlice())
 
 		if err != nil {
-			log.Fatal("Cannot Write to file:", err)
+			log.Fatal("Cannot Write to writer:", err)
 		}
 	}
-	writer.Flush()
+	csvWriter.Flush()
 }
 
 // CloseResultChannelWhenWorkersDone listens to the ChannelCloserInput.Done channel, and for closing ChannelCloserInput.Done and

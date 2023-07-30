@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/spf13/afero"
 	"harry-pap/beat_assignment/calculator"
 	"harry-pap/beat_assignment/concurrency"
 	"harry-pap/beat_assignment/model"
@@ -20,7 +19,6 @@ const numberOfWorkers = 10
 func main() {
 	now := time.Now().UTC()
 
-	appFS := afero.NewOsFs()
 	var wg sync.WaitGroup
 
 	jobs := make(chan []calculator.RidePart, 100)
@@ -36,8 +34,8 @@ func main() {
 		launch(func() { concurrency.RunWorker(workerInput) }, &wg)
 	}
 
-	inputFile, inputErr := appFS.Open(os.Args[1])
-	outputFile, outputErr := appFS.Create(os.Args[2])
+	inputFile, inputErr := os.Open(os.Args[1])
+	outputFile, outputErr := os.Create(os.Args[2])
 
 	panicIfNotNil(inputErr)
 	panicIfNotNil(outputErr)
@@ -45,9 +43,9 @@ func main() {
 	defer outputFile.Close()
 	defer inputFile.Close()
 
-	launch(func() { concurrency.ResultWriter(&outputFile, results, &wg) }, &wg)
+	launch(func() { concurrency.ResultWriter(outputFile, results, &wg) }, &wg)
 
-	parser.ParseInputCSV(&inputFile, jobs)
+	parser.ParseInputCSV(inputFile, jobs)
 
 	close(jobs)
 

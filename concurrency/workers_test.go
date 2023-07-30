@@ -1,8 +1,7 @@
 package concurrency
 
 import (
-	"bufio"
-	"github.com/spf13/afero"
+	"bytes"
 	"harry-pap/beat_assignment/calculator"
 	"harry-pap/beat_assignment/model"
 	"sync"
@@ -103,12 +102,7 @@ func TestWorker(t *testing.T) {
 }
 
 func TestResultWriter(t *testing.T) {
-	fileName := "/beat/rates_output.csv"
-	appFS := afero.NewMemMapFs()
-	file, _ := appFS.Create(fileName)
-
 	type args struct {
-		file   *afero.File
 		inputs chan model.RideFareEstimation
 		wg     *sync.WaitGroup
 	}
@@ -119,7 +113,6 @@ func TestResultWriter(t *testing.T) {
 	}{
 		{"with 2 rides",
 			args{
-				&file,
 				make(chan model.RideFareEstimation, 10),
 				newGroup(),
 			},
@@ -134,23 +127,15 @@ func TestResultWriter(t *testing.T) {
 
 			close(tt.args.inputs)
 
-			ResultWriter(tt.args.file, tt.args.inputs, tt.args.wg)
+			output := bytes.NewBufferString("")
 
-			file.Close()
+			ResultWriter(output, tt.args.inputs, tt.args.wg)
 
-			got := readFileContents(appFS, fileName)
-			if got != tt.want {
-				t.Errorf("Bad output, expected `%v`, got `%v`", tt.want, got)
+			if output.String() != tt.want {
+				t.Errorf("Bad output, expected `%v`, got `%v`", tt.want, output.String())
 			}
 		})
 	}
-}
-
-func readFileContents(appFS afero.Fs, fileName string) string {
-	res, _ := appFS.Open(fileName)
-	reader := bufio.NewReader(res)
-	res2, _ := reader.ReadString('#')
-	return res2
 }
 
 func TestChannelCloser(t *testing.T) {

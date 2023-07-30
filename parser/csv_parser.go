@@ -3,7 +3,6 @@ package parser
 import (
 	"encoding/csv"
 	"fmt"
-	"github.com/spf13/afero"
 	"harry-pap/beat_assignment/calculator"
 	"io"
 	"strconv"
@@ -12,12 +11,12 @@ import (
 // ParseInputCSV reads a given *afero.File CSV file, parses each line into a RidePart,
 // batches the ride parts using the rideId, and pushes them to given channel
 // Every 10,000 rides, a message is printed to standard output
-func ParseInputCSV(file *afero.File, channel chan []calculator.RidePart) {
+func ParseInputCSV(file io.Reader, channel chan []calculator.RidePart) {
 	var lastID int64
 	var rides = make([]calculator.RidePart, 0, 512)
 	var rideCounter int64
 
-	reader := csv.NewReader(*file)
+	reader := csv.NewReader(file)
 	initialized := false
 
 	for {
